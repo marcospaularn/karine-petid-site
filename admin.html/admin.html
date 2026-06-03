@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Karine Pet ID — Painel do Tutor</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',Arial,sans-serif;background:#0a0a0a;color:#fff;min-height:100vh}
+.topbar{background:#111;border-bottom:1px solid #c9a22730;padding:14px 24px;display:flex;align-items:center;justify-content:space-between}
+.topbar-logo{font-size:20px;font-weight:700;color:#c9a227;font-family:Georgia,serif}
+.topbar-name{font-size:13px;color:#c9a22799}
+.btn-sair{background:transparent;border:1px solid #c9a22740;color:#c9a22799;padding:6px 14px;border-radius:6px;cursor:pointer;font-size:12px}
+.container{max-width:720px;margin:0 auto;padding:24px 20px}
+
+/* LOGIN */
+.login-card{background:#111;border:1px solid #c9a22740;border-radius:20px;max-width:400px;margin:60px auto;overflow:hidden}
+.login-header{background:linear-gradient(160deg,#1a1400,#2d2000);padding:28px 24px;text-align:center;border-bottom:1px solid #c9a22760}
+.kp{font-size:28px;font-weight:700;color:#c9a227;font-family:Georgia,serif}
+.login-title{font-size:16px;color:#f0d060;margin-top:6px}
+.login-body{padding:24px}
+.field{margin-bottom:14px}
+.field label{display:block;font-size:11px;color:#c9a22799;margin-bottom:5px;text-transform:uppercase}
+.field input{width:100%;background:#1a1400;border:1px solid #c9a22740;border-radius:8px;color:#f0d060;padding:10px 14px;font-size:14px;outline:none}
+.field input:focus{border-color:#c9a227}
+.btn-login{display:block;width:100%;background:#c9a227;color:#0a0a0a;border:none;border-radius:10px;padding:13px;font-size:15px;font-weight:700;cursor:pointer;margin-top:16px}
+.cadastro-link{text-align:center;margin-top:14px;font-size:13px;color:#c9a22799}
+.cadastro-link a{color:#c9a227;text-decoration:none}
+.msg{padding:10px;border-radius:8px;font-size:13px;text-align:center;margin-top:12px;display:none}
+.msg.error{background:#200a0a;border:1px solid #7a1a1a;color:#f08080}
+
+/* PAINEL */
+#painel{display:none}
+.section-title{font-size:11px;font-weight:700;color:#c9a22799;text-transform:uppercase;letter-spacing:1px;margin-bottom:12px;margin-top:24px}
+.pet-card{background:#111;border:1px solid #c9a22740;border-radius:16px;padding:20px;margin-bottom:16px}
+.pet-header{display:flex;align-items:center;gap:14px;margin-bottom:16px}
+.pet-avatar{width:56px;height:56px;border-radius:50%;background:#1a1400;border:2px solid #c9a227;display:flex;align-items:center;justify-content:center;font-size:28px}
+.pet-name{font-size:20px;font-weight:700;color:#f0d060}
+.pet-breed{font-size:12px;color:#c9a22799;margin-top:2px}
+.badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600}
+.badge-ativo{background:#0f2000;border:1px solid #4a8020;color:#7cba30}
+.badge-vencido{background:#200a0a;border:1px solid #7a1a1a;color:#f08080}
+.info-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.info-item{background:#1a1400;border-radius:8px;padding:8px 12px;border:0.5px solid #c9a22720}
+.info-label{font-size:9px;color:#c9a22799;text-transform:uppercase}
+.info-value{font-size:13px;color:#f0d060;font-weight:500;margin-top:2px}
+.qr-section{background:#1a1400;border-radius:10px;padding:14px;margin-top:12px;text-align:center;border:0.5px solid #c9a22730}
+.qr-code-display{font-size:18px;font-weight:700;color:#c9a227;font-family:monospace;letter-spacing:2px}
+.qr-url{font-size:10px;color:#c9a22755;margin-top:4px;word-break:break-all}
+
+.assinatura-card{background:#111;border:1px solid #c9a22740;border-radius:16px;padding:20px}
+.venc-info{font-size:13px;color:#c9a22799;margin-top:6px}
+.venc-info span{color:#f0d060;font-weight:600}
+
+.scan-list{display:flex;flex-direction:column;gap:8px}
+.scan-item{background:#111;border:1px solid #c9a22730;border-radius:10px;padding:12px 14px;display:flex;justify-content:space-between;align-items:center}
+.scan-date{font-size:12px;color:#f0d060}
+.scan-coords{font-size:11px;color:#c9a22799}
+.scan-map{font-size:11px;color:#c9a227;text-decoration:none}
+.empty{text-align:center;padding:32px;color:#c9a22755;font-size:14px}
+
+.btn-renovar{display:block;background:#c9a227;color:#0a0a0a;text-align:center;padding:12px;border-radius:10px;font-size:14px;font-weight:700;text-decoration:none;margin-top:14px}
+.btn-wpp{display:block;background:#25D366;color:#fff;text-align:center;padding:11px;border-radius:10px;font-size:13px;font-weight:600;text-decoration:none;margin-top:8px}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-area">
+  <div class="login-card">
+    <div class="login-header">
+      <div class="kp">KP</div>
+      <div class="login-title">Painel do Tutor</div>
+    </div>
+    <div class="login-body">
+      <div class="field"><label>Email</label><input type="email" id="login-email" placeholder="seu@email.com"></div>
+      <div class="field"><label>Senha</label><input type="password" id="login-senha" placeholder="Sua senha"></div>
+      <button class="btn-login" onclick="fazerLogin()">Entrar</button>
+      <div class="msg error" id="login-msg"></div>
+      <div class="cadastro-link">Não tem conta? <a href="cadastro.html">Cadastre seu pet</a></div>
+    </div>
+  </div>
+</div>
+
+<!-- PAINEL -->
+<div id="painel">
+  <div class="topbar">
+    <div class="topbar-logo">KP — Karine Pet ID</div>
+    <div style="display:flex;align-items:center;gap:12px">
+      <div class="topbar-name" id="topbar-name"></div>
+      <button class="btn-sair" onclick="sair()">Sair</button>
+    </div>
+  </div>
+
+  <div class="container">
+    <div class="section-title">Meu pet</div>
+    <div id="pet-area"><div class="empty">Carregando...</div></div>
+
+    <div class="section-title">Minha assinatura</div>
+    <div id="assinatura-area"><div class="empty">Carregando...</div></div>
+
+    <div class="section-title">Histórico de escaneamentos</div>
+    <div id="scan-area"><div class="empty">Carregando...</div></div>
+  </div>
+</div>
+
+<script>
+const SUPABASE_URL = 'https://iaoscrszjhbxtlkheqno.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imlhb3NjcnN6amhieHRsa2hlcW5vIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg3ODMxMDYsImV4cCI6MjA5NDM1OTEwNn0.87-q7DKdYrzEWmYeZL6E_o_Sg-RMW1I3Zp2Cf2GPXo0';
+const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+async function fazerLogin() {
+  const email = document.getElementById('login-email').value.trim();
+  const senha = document.getElementById('login-senha').value;
+  const msg = document.getElementById('login-msg');
+
+  const { error } = await supabase.auth.signInWithPassword({ email, password: senha });
+  if (error) {
+    msg.textContent = 'Email ou senha incorretos';
+    msg.style.display = 'block';
+    return;
+  }
+  mostrarPainel();
+}
+
+async function sair() {
+  await supabase.auth.signOut();
+  document.getElementById('login-area').style.display = 'block';
+  document.getElementById('painel').style.display = 'none';
+}
+
+async function mostrarPainel() {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return;
+
+  document.getElementById('login-area').style.display = 'none';
+  document.getElementById('painel').style.display = 'block';
+  document.getElementById('topbar-name').textContent = user.email;
+
+  // Buscar assinatura
+  const { data: ass } = await supabase
+    .from('assinaturas')
+    .select('*')
+    .eq('tutor_email', user.email)
+    .single();
+
+  if (!ass) {
+    document.getElementById('pet-area').innerHTML = '<div class="empty">Nenhum cadastro encontrado.</div>';
+    return;
+  }
+
+  // Buscar pet
+  const { data: pet } = await supabase
+    .from('pets_saas')
+    .select('*')
+    .eq('assinatura_id', ass.id)
+    .eq('ativo', true)
+    .single();
+
+  // Buscar QR Code
+  const { data: qr } = await supabase
+    .from('qrcodes')
+    .select('qr_code, status')
+    .eq('assinatura_id', ass.id)
+    .single();
+
+  // Renderizar pet
+  const petHtml = pet ? `
+    <div class="pet-card">
+      <div class="pet-header">
+        <div class="pet-avatar">🐾</div>
+        <div>
+          <div class="pet-name">${pet.nome}</div>
+          <div class="pet-breed">${pet.especie || ''}${pet.raca ? ' • ' + pet.raca : ''}</div>
+        </div>
+        <span class="badge badge-ativo">✅ Ativo</span>
+      </div>
+      <div class="info-grid">
+        ${pet.cor ? `<div class="info-item"><div class="info-label">Cor</div><div class="info-value">${pet.cor}</div></div>` : ''}
+        ${pet.porte ? `<div class="info-item"><div class="info-label">Porte</div><div class="info-value">${pet.porte}</div></div>` : ''}
+        ${pet.obs ? `<div class="info-item" style="grid-column:1/-1"><div class="info-label">Observações</div><div class="info-value">${pet.obs}</div></div>` : ''}
+      </div>
+      ${qr ? `<div class="qr-section">
+        <div class="info-label">Código do pingente</div>
+        <div class="qr-code-display">${qr.qr_code}</div>
+        <div class="qr-url">https://n8n-n8n.q9hssd.easypanel.host/webhook/karine-petid-qr/karine-petid/p/${qr.qr_code}</div>
+      </div>` : ''}
+    </div>` : '<div class="empty">Nenhum pet cadastrado.</div>';
+
+  document.getElementById('pet-area').innerHTML = petHtml;
+
+  // Renderizar assinatura
+  const venc = ass.vencimento ? new Date(ass.vencimento).toLocaleDateString('pt-BR') : '—';
+  const diasRestantes = ass.vencimento ? Math.ceil((new Date(ass.vencimento) - new Date()) / (1000*60*60*24)) : 0;
+  document.getElementById('assinatura-area').innerHTML = `
+    <div class="assinatura-card">
+      <span class="badge ${ass.status === 'ativo' ? 'badge-ativo' : 'badge-vencido'}">${ass.status === 'ativo' ? '✅ Ativa' : '⚠️ Vencida'}</span>
+      <div class="venc-info">Plano: <span>${ass.plano || 'básico'}</span></div>
+      <div class="venc-info">Vencimento: <span>${venc}</span> ${diasRestantes > 0 ? '(em ' + diasRestantes + ' dias)' : ''}</div>
+      <a class="btn-renovar" href="https://wa.me/5515997996797?text=Quero renovar minha assinatura Karine Pet ID">Renovar assinatura</a>
+      <a class="btn-wpp" href="https://wa.me/5515997996797">📱 Falar com a Karine</a>
+    </div>`;
+
+  // Buscar scans
+  if (qr) {
+    const { data: scans } = await supabase
+      .from('scan_historico')
+      .select('*')
+      .eq('pet_id', qr.qr_code)
+      .order('horario', { ascending: false })
+      .limit(10);
+
+    if (scans && scans.length > 0) {
+      document.getElementById('scan-area').innerHTML = `<div class="scan-list">${scans.map(s => `
+        <div class="scan-item">
+          <div>
+            <div class="scan-date">📍 ${new Date(s.horario).toLocaleString('pt-BR')}</div>
+            <div class="scan-coords">${s.latitude}, ${s.longitude}</div>
+          </div>
+          <a class="scan-map" href="https://maps.google.com/?q=${s.latitude},${s.longitude}" target="_blank">Ver no mapa →</a>
+        </div>`).join('')}</div>`;
+    } else {
+      document.getElementById('scan-area').innerHTML = '<div class="empty">🔍 Nenhum escaneamento ainda.</div>';
+    }
+  }
+}
+
+// Verificar sessão ao carregar
+supabase.auth.getSession().then(({ data: { session } }) => {
+  if (session) mostrarPainel();
+});
+</script>
+</body>
+</html>
