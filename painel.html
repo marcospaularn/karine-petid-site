@@ -158,14 +158,7 @@ async function mostrarPainel() {
     .eq('ativo', true)
     .single();
 
-  // Buscar QR Code
-  const { data: qr } = await supabase
-    .from('qrcodes')
-    .select('qr_code, status')
-    .eq('assinatura_id', ass.id)
-    .single();
-
-  // Renderizar pet
+  // Renderizar pet — o pet_id É o código do QR (sem tabela qrcodes separada)
   const petHtml = pet ? `
     <div class="pet-card">
       <div class="pet-header">
@@ -179,12 +172,26 @@ async function mostrarPainel() {
       <div class="info-grid">
         ${pet.cor ? `<div class="info-item"><div class="info-label">Cor</div><div class="info-value">${pet.cor}</div></div>` : ''}
         ${pet.porte ? `<div class="info-item"><div class="info-label">Porte</div><div class="info-value">${pet.porte}</div></div>` : ''}
+        ${pet.sexo ? `<div class="info-item"><div class="info-label">Sexo</div><div class="info-value">${pet.sexo}</div></div>` : ''}
+        ${pet.idade ? `<div class="info-item"><div class="info-label">Idade</div><div class="info-value">${pet.idade}</div></div>` : ''}
         ${pet.obs ? `<div class="info-item" style="grid-column:1/-1"><div class="info-label">Observações</div><div class="info-value">${pet.obs}</div></div>` : ''}
       </div>
-      ${qr ? `<div class="qr-section">
-        <div class="info-label">Código do pingente</div>
-        <div class="qr-code-display">${qr.qr_code}</div>
-        <div class="qr-url">https://n8n-n8n.q9hssd.easypanel.host/webhook/karine-petid-qr/karine-petid/p/${qr.qr_code}</div>
+      <div class="qr-section">
+        <div class="info-label">Código do pingente (QR Code)</div>
+        <div class="qr-code-display">${pet.pet_id}</div>
+        <div class="qr-url">https://n8n-n8n.q9hssd.easypanel.host/webhook/karine-petid/scan?id=${pet.pet_id}</div>
+      </div>
+      <div class="qr-section">
+        <div class="info-label">PIN veterinário (informe pra quem for ver a ficha médica completa)</div>
+        <div class="qr-code-display">${pet.pin_veterinario || '—'}</div>
+      </div>
+      ${(pet.vacinas || pet.alergias || pet.medicamentos || pet.historico_medico) ? `
+      <div class="qr-section" style="text-align:left">
+        <div class="info-label" style="margin-bottom:8px">Ficha médica</div>
+        ${pet.vacinas ? `<div class="venc-info">Vacinas: <span>${pet.vacinas}</span></div>` : ''}
+        ${pet.alergias ? `<div class="venc-info">Alergias: <span>${pet.alergias}</span></div>` : ''}
+        ${pet.medicamentos ? `<div class="venc-info">Medicamentos: <span>${pet.medicamentos}</span></div>` : ''}
+        ${pet.historico_medico ? `<div class="venc-info">Histórico: <span>${pet.historico_medico}</span></div>` : ''}
       </div>` : ''}
     </div>` : '<div class="empty">Nenhum pet cadastrado.</div>';
 
@@ -203,11 +210,11 @@ async function mostrarPainel() {
     </div>`;
 
   // Buscar scans
-  if (qr) {
+  if (pet) {
     const { data: scans } = await supabase
       .from('scan_historico')
       .select('*')
-      .eq('pet_id', qr.qr_code)
+      .eq('pet_id', pet.pet_id)
       .order('horario', { ascending: false })
       .limit(10);
 

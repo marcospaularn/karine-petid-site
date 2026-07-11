@@ -73,7 +73,23 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#0a0a0a;min-height:100vh
         </select>
       </div>
     </div>
+    <div class="row">
+      <div class="field"><label>Sexo</label>
+        <select id="pet_sexo">
+          <option value="">Selecione</option>
+          <option value="Macho">Macho</option>
+          <option value="Fêmea">Fêmea</option>
+        </select>
+      </div>
+      <div class="field"><label>Idade</label><input type="text" id="pet_idade" placeholder="Ex: 2 anos"></div>
+    </div>
     <div class="field"><label>Observações</label><textarea id="pet_obs" placeholder="Ex: Castrado, usa coleira vermelha..."></textarea></div>
+
+    <div class="section-title">Ficha médica (visível só com o PIN)</div>
+    <div class="field"><label>PIN de acesso veterinário *</label><input type="text" id="pin_veterinario" placeholder="4 dígitos, ex: 1234" maxlength="4" inputmode="numeric"></div>
+    <div class="field"><label>Vacinas</label><textarea id="pet_vacinas" placeholder="Ex: V10 em 03/2026, antirrábica em 01/2026"></textarea></div>
+    <div class="field"><label>Alergias</label><textarea id="pet_alergias" placeholder="Ex: Alergia a determinado remédio"></textarea></div>
+    <div class="field"><label>Medicamentos em uso</label><textarea id="pet_medicamentos" placeholder="Ex: Nenhum"></textarea></div>
 
     <button class="btn" onclick="cadastrar()" id="btn-cadastrar">🐾 Cadastrar meu pet</button>
     <div class="msg" id="msg"></div>
@@ -101,11 +117,16 @@ async function cadastrar() {
   const pet_nome = document.getElementById('pet_nome').value.trim();
   const especie = document.getElementById('pet_especie').value;
 
-  if (!nome || !email || !telefone || !senha || !pet_nome || !especie) {
+  const pin = document.getElementById('pin_veterinario').value.trim();
+
+  if (!nome || !email || !telefone || !senha || !pet_nome || !especie || !pin) {
     showMsg('Preencha todos os campos obrigatórios (*)', 'error'); return;
   }
   if (senha.length < 6) {
     showMsg('A senha deve ter pelo menos 6 caracteres', 'error'); return;
+  }
+  if (!/^\d{4}$/.test(pin)) {
+    showMsg('O PIN veterinário deve ter exatamente 4 dígitos', 'error'); return;
   }
 
   const btn = document.getElementById('btn-cadastrar');
@@ -137,17 +158,7 @@ async function cadastrar() {
       .single();
     if (assError) throw assError;
 
-    // 3. Buscar QR Code dormente disponível
-    const { data: qrData, error: qrError } = await supabase
-      .from('qrcodes')
-      .select('id, qr_code')
-      .eq('status', 'dormente')
-      .is('assinatura_id', null)
-      .limit(1)
-      .single();
-    if (qrError) throw new Error('Nenhum QR Code disponível no momento.');
-
-    // 4. Cadastrar pet
+    // 3. Cadastrar pet — o pet_id gerado É o código que vai no QR do pingente
     const petId = 'PET-' + String(assData.id).padStart(4, '0');
     const { error: petError } = await supabase
       .from('pets_saas')
@@ -158,19 +169,19 @@ async function cadastrar() {
         raca: document.getElementById('pet_raca').value.trim() || null,
         cor: document.getElementById('pet_cor').value.trim() || null,
         porte: document.getElementById('pet_porte').value || null,
+        sexo: document.getElementById('pet_sexo').value || null,
+        idade: document.getElementById('pet_idade').value.trim() || null,
         obs: document.getElementById('pet_obs').value.trim() || null,
+        vacinas: document.getElementById('pet_vacinas').value.trim() || null,
+        alergias: document.getElementById('pet_alergias').value.trim() || null,
+        medicamentos: document.getElementById('pet_medicamentos').value.trim() || null,
+        pin_veterinario: pin,
         assinatura_id: assData.id,
         ativo: true
       });
     if (petError) throw petError;
 
-    // 5. Vincular QR Code
-    await supabase
-      .from('qrcodes')
-      .update({ status: 'ativo', assinatura_id: assData.id, ativado_em: new Date().toISOString() })
-      .eq('id', qrData.id);
-
-    showMsg('✅ Cadastro realizado! Verifique seu email e acesse o painel.', 'success');
+    showMsg('✅ Cadastro realizado! O código do seu pet é ' + petId + '. Verifique seu email e acesse o painel.', 'success');
     btn.textContent = '✅ Cadastrado!';
 
     setTimeout(() => { window.location.href = 'painel.html'; }, 2000);
