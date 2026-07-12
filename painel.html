@@ -6,70 +6,71 @@
 <title>Karine Pet ID — Painel do Tutor</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
+:root{--accent:#c9a227;--accent-light:#f0d060;--accent-rgb:201,162,39}
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:'Segoe UI',Arial,sans-serif;background:#0a0a0a;color:#fff;min-height:100vh}
-.topbar{background:#111;border-bottom:1px solid #c9a22730;padding:14px 24px;display:flex;align-items:center;justify-content:space-between}
-.topbar-logo{font-size:20px;font-weight:700;color:#c9a227;font-family:Georgia,serif}
-.topbar-name{font-size:13px;color:#c9a22799}
-.btn-sair{background:transparent;border:1px solid #c9a22740;color:#c9a22799;padding:6px 14px;border-radius:6px;cursor:pointer;font-size:12px}
+.topbar{background:#111;border-bottom:1px solid rgba(var(--accent-rgb),0.19);padding:14px 24px;display:flex;align-items:center;justify-content:space-between}
+.topbar-logo{font-size:20px;font-weight:700;color:var(--accent);font-family:Georgia,serif}
+.topbar-name{font-size:13px;color:rgba(var(--accent-rgb),0.6)}
+.btn-sair{background:transparent;border:1px solid rgba(var(--accent-rgb),0.25);color:rgba(var(--accent-rgb),0.6);padding:6px 14px;border-radius:6px;cursor:pointer;font-size:12px}
 .container{max-width:720px;margin:0 auto;padding:24px 20px}
 
 /* LOGIN */
-.login-card{background:#111;border:1px solid #c9a22740;border-radius:20px;max-width:400px;margin:60px auto;overflow:hidden}
-.login-header{background:linear-gradient(160deg,#1a1400,#2d2000);padding:28px 24px;text-align:center;border-bottom:1px solid #c9a22760}
-.kp{font-size:28px;font-weight:700;color:#c9a227;font-family:Georgia,serif}
-.login-title{font-size:16px;color:#f0d060;margin-top:6px}
+.login-card{background:#111;border:1px solid rgba(var(--accent-rgb),0.25);border-radius:20px;max-width:400px;margin:60px auto;overflow:hidden}
+.login-header{background:linear-gradient(160deg,#1a1400,#2d2000);padding:28px 24px;text-align:center;border-bottom:1px solid rgba(var(--accent-rgb),0.38)}
+.kp{font-size:28px;font-weight:700;color:var(--accent);font-family:Georgia,serif}
+.login-title{font-size:16px;color:var(--accent-light);margin-top:6px}
 .login-body{padding:24px}
 .field{margin-bottom:14px}
-.field label{display:block;font-size:11px;color:#c9a22799;margin-bottom:5px;text-transform:uppercase}
-.field input{width:100%;background:#1a1400;border:1px solid #c9a22740;border-radius:8px;color:#f0d060;padding:10px 14px;font-size:14px;outline:none}
-.field input:focus{border-color:#c9a227}
-.btn-login{display:block;width:100%;background:#c9a227;color:#0a0a0a;border:none;border-radius:10px;padding:13px;font-size:15px;font-weight:700;cursor:pointer;margin-top:16px}
-.cadastro-link{text-align:center;margin-top:14px;font-size:13px;color:#c9a22799}
-.cadastro-link a{color:#c9a227;text-decoration:none}
+.field label{display:block;font-size:11px;color:rgba(var(--accent-rgb),0.6);margin-bottom:5px;text-transform:uppercase}
+.field input{width:100%;background:#1a1400;border:1px solid rgba(var(--accent-rgb),0.25);border-radius:8px;color:var(--accent-light);padding:10px 14px;font-size:14px;outline:none}
+.field input:focus{border-color:var(--accent)}
+.btn-login{display:block;width:100%;background:var(--accent);color:#0a0a0a;border:none;border-radius:10px;padding:13px;font-size:15px;font-weight:700;cursor:pointer;margin-top:16px}
+.cadastro-link{text-align:center;margin-top:14px;font-size:13px;color:rgba(var(--accent-rgb),0.6)}
+.cadastro-link a{color:var(--accent);text-decoration:none}
 .msg{padding:10px;border-radius:8px;font-size:13px;text-align:center;margin-top:12px;display:none}
 .msg.error{background:#200a0a;border:1px solid #7a1a1a;color:#f08080}
 
 /* PAINEL */
 #painel{display:none}
-.section-title{font-size:11px;font-weight:700;color:#c9a22799;text-transform:uppercase;letter-spacing:1px;margin-bottom:12px;margin-top:24px}
-.pet-card{background:#111;border:1px solid #c9a22740;border-radius:16px;padding:20px;margin-bottom:16px}
+.section-title{font-size:11px;font-weight:700;color:rgba(var(--accent-rgb),0.6);text-transform:uppercase;letter-spacing:1px;margin-bottom:12px;margin-top:24px}
+.pet-card{background:#111;border:1px solid rgba(var(--accent-rgb),0.25);border-radius:16px;padding:20px;margin-bottom:16px}
 .pet-header{display:flex;align-items:center;gap:14px;margin-bottom:16px}
-.pet-avatar{width:56px;height:56px;border-radius:50%;background:#1a1400;border:2px solid #c9a227;display:flex;align-items:center;justify-content:center;font-size:28px}
-.pet-name{font-size:20px;font-weight:700;color:#f0d060}
-.pet-breed{font-size:12px;color:#c9a22799;margin-top:2px}
+.pet-avatar{width:56px;height:56px;border-radius:50%;background:#1a1400;border:2px solid var(--accent);display:flex;align-items:center;justify-content:center;font-size:28px}
+.pet-name{font-size:20px;font-weight:700;color:var(--accent-light)}
+.pet-breed{font-size:12px;color:rgba(var(--accent-rgb),0.6);margin-top:2px}
 .badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600}
 .badge-ativo{background:#0f2000;border:1px solid #4a8020;color:#7cba30}
 .badge-vencido{background:#200a0a;border:1px solid #7a1a1a;color:#f08080}
 .info-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-.info-item{background:#1a1400;border-radius:8px;padding:8px 12px;border:0.5px solid #c9a22720}
-.info-label{font-size:9px;color:#c9a22799;text-transform:uppercase}
-.info-value{font-size:13px;color:#f0d060;font-weight:500;margin-top:2px}
-.qr-section{background:#1a1400;border-radius:10px;padding:14px;margin-top:12px;text-align:center;border:0.5px solid #c9a22730}
-.qr-code-display{font-size:18px;font-weight:700;color:#c9a227;font-family:monospace;letter-spacing:2px}
-.qr-url{font-size:10px;color:#c9a22755;margin-top:4px;word-break:break-all}
+.info-item{background:#1a1400;border-radius:8px;padding:8px 12px;border:0.5px solid rgba(var(--accent-rgb),0.13)}
+.info-label{font-size:9px;color:rgba(var(--accent-rgb),0.6);text-transform:uppercase}
+.info-value{font-size:13px;color:var(--accent-light);font-weight:500;margin-top:2px}
+.qr-section{background:#1a1400;border-radius:10px;padding:14px;margin-top:12px;text-align:center;border:0.5px solid rgba(var(--accent-rgb),0.19)}
+.qr-code-display{font-size:18px;font-weight:700;color:var(--accent);font-family:monospace;letter-spacing:2px}
+.qr-url{font-size:10px;color:rgba(var(--accent-rgb),0.33);margin-top:4px;word-break:break-all}
 
-.assinatura-card{background:#111;border:1px solid #c9a22740;border-radius:16px;padding:20px}
-.venc-info{font-size:13px;color:#c9a22799;margin-top:6px}
-.venc-info span{color:#f0d060;font-weight:600}
+.assinatura-card{background:#111;border:1px solid rgba(var(--accent-rgb),0.25);border-radius:16px;padding:20px}
+.venc-info{font-size:13px;color:rgba(var(--accent-rgb),0.6);margin-top:6px}
+.venc-info span{color:var(--accent-light);font-weight:600}
 
 .scan-list{display:flex;flex-direction:column;gap:8px}
-.scan-item{background:#111;border:1px solid #c9a22730;border-radius:10px;padding:12px 14px;display:flex;justify-content:space-between;align-items:center}
-.scan-date{font-size:12px;color:#f0d060}
-.scan-coords{font-size:11px;color:#c9a22799}
-.scan-map{font-size:11px;color:#c9a227;text-decoration:none}
-.empty{text-align:center;padding:32px;color:#c9a22755;font-size:14px}
+.scan-item{background:#111;border:1px solid rgba(var(--accent-rgb),0.19);border-radius:10px;padding:12px 14px;display:flex;justify-content:space-between;align-items:center}
+.scan-date{font-size:12px;color:var(--accent-light)}
+.scan-coords{font-size:11px;color:rgba(var(--accent-rgb),0.6)}
+.scan-map{font-size:11px;color:var(--accent);text-decoration:none}
+.empty{text-align:center;padding:32px;color:rgba(var(--accent-rgb),0.33);font-size:14px}
 
-.btn-renovar{display:block;background:#c9a227;color:#0a0a0a;text-align:center;padding:12px;border-radius:10px;font-size:14px;font-weight:700;text-decoration:none;margin-top:14px}
+.btn-renovar{display:block;background:var(--accent);color:#0a0a0a;text-align:center;padding:12px;border-radius:10px;font-size:14px;font-weight:700;text-decoration:none;margin-top:14px}
 .btn-wpp{display:block;background:#25D366;color:#fff;text-align:center;padding:11px;border-radius:10px;font-size:13px;font-weight:600;text-decoration:none;margin-top:8px}
 
-.btn-novo-pet{display:block;width:100%;background:transparent;border:1px dashed #c9a22760;color:#c9a227;padding:12px;border-radius:12px;font-size:13px;font-weight:700;cursor:pointer;margin-bottom:16px}
-.novo-pet-form{background:#111;border:1px solid #c9a22740;border-radius:16px;padding:20px;margin-bottom:16px;display:none}
+.btn-novo-pet{display:block;width:100%;background:transparent;border:1px dashed rgba(var(--accent-rgb),0.38);color:var(--accent);padding:12px;border-radius:12px;font-size:13px;font-weight:700;cursor:pointer;margin-bottom:16px}
+.novo-pet-form{background:#111;border:1px solid rgba(var(--accent-rgb),0.25);border-radius:16px;padding:20px;margin-bottom:16px;display:none}
 .novo-pet-form .field{margin-bottom:12px}
-.novo-pet-form .field label{display:block;font-size:11px;color:#c9a22799;margin-bottom:5px;text-transform:uppercase}
-.novo-pet-form .field input,.novo-pet-form .field select,.novo-pet-form .field textarea{width:100%;background:#1a1400;border:1px solid #c9a22740;border-radius:8px;color:#f0d060;padding:9px 12px;font-size:13px;outline:none}
+.novo-pet-form .field label{display:block;font-size:11px;color:rgba(var(--accent-rgb),0.6);margin-bottom:5px;text-transform:uppercase}
+.novo-pet-form .field input,.novo-pet-form .field select,.novo-pet-form .field textarea{width:100%;background:#1a1400;border:1px solid rgba(var(--accent-rgb),0.25);border-radius:8px;color:var(--accent-light);padding:9px 12px;font-size:13px;outline:none}
 .novo-pet-form .row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.scan-pet-name{font-size:10px;color:#c9a227;text-transform:uppercase;font-weight:700}
+.scan-pet-name{font-size:10px;color:var(--accent);text-transform:uppercase;font-weight:700}
 </style>
 </head>
 <body>
@@ -94,7 +95,7 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#0a0a0a;color:#fff;min-h
 <!-- PAINEL -->
 <div id="painel">
   <div class="topbar">
-    <div class="topbar-logo">KP — Karine Pet ID</div>
+    <div class="topbar-logo" id="topbar-logo">KP — Karine Pet ID</div>
     <div style="display:flex;align-items:center;gap:12px">
       <div class="topbar-name" id="topbar-name"></div>
       <button class="btn-sair" onclick="sair()">Sair</button>
@@ -185,6 +186,30 @@ async function sair() {
 
 let assinaturaAtual = null;
 
+function hexParaRgb(hex) {
+  const m = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex || '');
+  if (!m) return null;
+  return `${parseInt(m[1], 16)}, ${parseInt(m[2], 16)}, ${parseInt(m[3], 16)}`;
+}
+
+function aplicarBranding(ass) {
+  const raiz = document.documentElement.style;
+  if (ass.tipo_conta === 'comerciante') {
+    const rgb = hexParaRgb(ass.cor_marca);
+    if (ass.cor_marca && rgb) {
+      raiz.setProperty('--accent', ass.cor_marca);
+      raiz.setProperty('--accent-light', ass.cor_marca);
+      raiz.setProperty('--accent-rgb', rgb);
+    }
+    document.getElementById('topbar-logo').textContent = ass.empresa_nome || 'Meu negócio';
+  } else {
+    raiz.removeProperty('--accent');
+    raiz.removeProperty('--accent-light');
+    raiz.removeProperty('--accent-rgb');
+    document.getElementById('topbar-logo').textContent = 'KP — Karine Pet ID';
+  }
+}
+
 async function mostrarPainel() {
   const { data: { user } } = await supabaseClient.auth.getUser();
   if (!user) return;
@@ -205,6 +230,7 @@ async function mostrarPainel() {
     return;
   }
   assinaturaAtual = ass;
+  aplicarBranding(ass);
 
   // Buscar TODOS os pets ativos dessa conta (uma conta pode ter vários, ex: loja
   // de pet cadastrando os pets de vários clientes dela)
@@ -226,7 +252,7 @@ async function mostrarPainel() {
       <div class="venc-info">Plano: <span>${ass.plano || 'básico'}</span></div>
       <div class="venc-info">Vencimento: <span>${venc}</span> ${diasRestantes > 0 ? '(em ' + diasRestantes + ' dias)' : ''}</div>
       <a class="btn-renovar" href="https://wa.me/5515997996797?text=Quero renovar minha assinatura Karine Pet ID">Renovar assinatura</a>
-      <a class="btn-wpp" href="https://wa.me/5515997996797">📱 Falar com a Karine</a>
+      <a class="btn-wpp" href="https://wa.me/${(ass.whatsapp_comercial || '5515997996797').replace(/\D/g,'')}">📱 Falar com ${ass.tipo_conta === 'comerciante' ? (ass.empresa_nome || 'o suporte') : 'a Karine'}</a>
     </div>`;
 
   // Buscar scans de todos os pets da conta

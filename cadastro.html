@@ -31,6 +31,13 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#0a0a0a;min-height:100vh
 .msg.error{background:#200a0a;border:1px solid #7a1a1a;color:#f08080}
 .login-link{text-align:center;margin-top:16px;font-size:13px;color:#c9a22799}
 .login-link a{color:#c9a227;text-decoration:none}
+
+.tipo-conta{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px}
+.tipo-conta label{display:flex;flex-direction:column;align-items:center;gap:4px;background:#1a1400;border:1px solid #c9a22740;border-radius:10px;padding:14px 10px;cursor:pointer;font-size:12px;color:#c9a22799;text-align:center;transition:border .2s}
+.tipo-conta input{display:none}
+.tipo-conta input:checked + span{color:#f0d060;font-weight:700}
+.tipo-conta label:has(input:checked){border-color:#c9a227;background:#241d00}
+.tipo-conta .icon{font-size:22px}
 </style>
 </head>
 <body>
@@ -41,6 +48,11 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#0a0a0a;min-height:100vh
     <div class="sub">Crie sua conta e proteja seu animal</div>
   </div>
   <div class="body">
+    <div class="tipo-conta">
+      <label><input type="radio" name="tipo_conta" value="tutor" checked onchange="atualizarTipoConta()"><span class="icon">🐾</span><span>Sou tutor</span></label>
+      <label><input type="radio" name="tipo_conta" value="comerciante" onchange="atualizarTipoConta()"><span class="icon">🏪</span><span>Sou comerciante (loja/pet shop)</span></label>
+    </div>
+
     <div class="section-title">Seus dados</div>
     <div class="field"><label>Nome completo *</label><input type="text" id="tutor_nome" placeholder="Seu nome completo"></div>
     <div class="row">
@@ -49,47 +61,61 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#0a0a0a;min-height:100vh
     </div>
     <div class="field"><label>Senha *</label><input type="password" id="senha" placeholder="Mínimo 6 caracteres"></div>
 
-    <div class="section-title">Dados do pet</div>
-    <div class="field"><label>Nome do pet *</label><input type="text" id="pet_nome" placeholder="Ex: Zeus"></div>
-    <div class="row">
-      <div class="field"><label>Espécie *</label>
-        <select id="pet_especie">
-          <option value="">Selecione</option>
-          <option value="Cachorro">Cachorro</option>
-          <option value="Gato">Gato</option>
-          <option value="Outro">Outro</option>
-        </select>
+    <div id="bloco-comerciante" style="display:none">
+      <div class="section-title">Dados do negócio</div>
+      <div class="field"><label>Nome do negócio *</label><input type="text" id="empresa_nome" placeholder="Ex: Focinho Gelado"></div>
+      <div class="row">
+        <div class="field"><label>Cor da marca</label><input type="color" id="cor_marca" value="#c9a227"></div>
+        <div class="field"><label>WhatsApp comercial</label><input type="text" id="whatsapp_comercial" placeholder="15999999999"></div>
       </div>
-      <div class="field"><label>Raça</label><input type="text" id="pet_raca" placeholder="Ex: Dobermann"></div>
+      <div class="field"><label>Logo (URL da imagem)</label><input type="text" id="logo_url" placeholder="https://..."></div>
     </div>
-    <div class="row">
-      <div class="field"><label>Cor</label><input type="text" id="pet_cor" placeholder="Ex: Marrom"></div>
-      <div class="field"><label>Porte</label>
-        <select id="pet_porte">
-          <option value="">Selecione</option>
-          <option value="Pequeno">Pequeno</option>
-          <option value="Médio">Médio</option>
-          <option value="Grande">Grande</option>
-        </select>
-      </div>
-    </div>
-    <div class="row">
-      <div class="field"><label>Sexo</label>
-        <select id="pet_sexo">
-          <option value="">Selecione</option>
-          <option value="Macho">Macho</option>
-          <option value="Fêmea">Fêmea</option>
-        </select>
-      </div>
-      <div class="field"><label>Idade</label><input type="text" id="pet_idade" placeholder="Ex: 2 anos"></div>
-    </div>
-    <div class="field"><label>Observações</label><textarea id="pet_obs" placeholder="Ex: Castrado, usa coleira vermelha..."></textarea></div>
 
-    <div class="section-title">Ficha médica (visível só com o PIN)</div>
-    <div class="field"><label>PIN de acesso veterinário *</label><input type="text" id="pin_veterinario" placeholder="4 dígitos, ex: 1234" maxlength="4" inputmode="numeric"></div>
-    <div class="field"><label>Vacinas</label><textarea id="pet_vacinas" placeholder="Ex: V10 em 03/2026, antirrábica em 01/2026"></textarea></div>
-    <div class="field"><label>Alergias</label><textarea id="pet_alergias" placeholder="Ex: Alergia a determinado remédio"></textarea></div>
-    <div class="field"><label>Medicamentos em uso</label><textarea id="pet_medicamentos" placeholder="Ex: Nenhum"></textarea></div>
+    <div id="bloco-pet">
+      <div class="section-title">Dados do pet</div>
+      <div class="field"><label>Nome do pet *</label><input type="text" id="pet_nome" placeholder="Ex: Zeus"></div>
+      <div class="row">
+        <div class="field"><label>Espécie *</label>
+          <select id="pet_especie">
+            <option value="">Selecione</option>
+            <option value="Cachorro">Cachorro</option>
+            <option value="Gato">Gato</option>
+            <option value="Outro">Outro</option>
+          </select>
+        </div>
+        <div class="field"><label>Raça</label><input type="text" id="pet_raca" placeholder="Ex: Dobermann"></div>
+      </div>
+      <div class="row">
+        <div class="field"><label>Cor</label><input type="text" id="pet_cor" placeholder="Ex: Marrom"></div>
+        <div class="field"><label>Porte</label>
+          <select id="pet_porte">
+            <option value="">Selecione</option>
+            <option value="Pequeno">Pequeno</option>
+            <option value="Médio">Médio</option>
+            <option value="Grande">Grande</option>
+          </select>
+        </div>
+      </div>
+      <div class="row">
+        <div class="field"><label>Sexo</label>
+          <select id="pet_sexo">
+            <option value="">Selecione</option>
+            <option value="Macho">Macho</option>
+            <option value="Fêmea">Fêmea</option>
+          </select>
+        </div>
+        <div class="field"><label>Idade</label><input type="text" id="pet_idade" placeholder="Ex: 2 anos"></div>
+      </div>
+      <div class="field"><label>Observações</label><textarea id="pet_obs" placeholder="Ex: Castrado, usa coleira vermelha..."></textarea></div>
+
+      <div class="section-title">Ficha médica (visível só com o PIN)</div>
+      <div class="field"><label>PIN de acesso veterinário <span id="pin-obrigatorio">*</span></label><input type="text" id="pin_veterinario" placeholder="4 dígitos, ex: 1234" maxlength="4" inputmode="numeric"></div>
+      <div class="field"><label>Vacinas</label><textarea id="pet_vacinas" placeholder="Ex: V10 em 03/2026, antirrábica em 01/2026"></textarea></div>
+      <div class="field"><label>Alergias</label><textarea id="pet_alergias" placeholder="Ex: Alergia a determinado remédio"></textarea></div>
+      <div class="field"><label>Medicamentos em uso</label><textarea id="pet_medicamentos" placeholder="Ex: Nenhum"></textarea></div>
+    </div>
+
+    <p id="aviso-comerciante" style="display:none;font-size:12px;color:#c9a22799;margin-bottom:14px">Depois de criar sua conta, você adiciona os pets dos seus clientes direto no painel.</p>
 
     <button class="btn" onclick="cadastrar()" id="btn-cadastrar">🐾 Cadastrar meu pet</button>
     <div class="msg" id="msg"></div>
@@ -109,24 +135,54 @@ function showMsg(text, type) {
   el.style.display = 'block';
 }
 
+function tipoContaSelecionado() {
+  return document.querySelector('input[name="tipo_conta"]:checked').value;
+}
+
+function atualizarTipoConta() {
+  const comerciante = tipoContaSelecionado() === 'comerciante';
+  document.getElementById('bloco-comerciante').style.display = comerciante ? 'block' : 'none';
+  document.getElementById('bloco-pet').style.display = comerciante ? 'none' : 'block';
+  document.getElementById('aviso-comerciante').style.display = comerciante ? 'block' : 'none';
+  document.getElementById('pin-obrigatorio').style.display = comerciante ? 'none' : 'inline';
+  document.getElementById('btn-cadastrar').textContent = comerciante ? '🏪 Criar conta do meu negócio' : '🐾 Cadastrar meu pet';
+}
+
 async function cadastrar() {
+  const comerciante = tipoContaSelecionado() === 'comerciante';
   const nome = document.getElementById('tutor_nome').value.trim();
   const email = document.getElementById('tutor_email').value.trim();
   const telefone = document.getElementById('tutor_telefone').value.trim();
   const senha = document.getElementById('senha').value;
-  const pet_nome = document.getElementById('pet_nome').value.trim();
-  const especie = document.getElementById('pet_especie').value;
 
-  const pin = document.getElementById('pin_veterinario').value.trim();
-
-  if (!nome || !email || !telefone || !senha || !pet_nome || !especie || !pin) {
+  if (!nome || !email || !telefone || !senha) {
     showMsg('Preencha todos os campos obrigatórios (*)', 'error'); return;
   }
   if (senha.length < 6) {
     showMsg('A senha deve ter pelo menos 6 caracteres', 'error'); return;
   }
-  if (!/^\d{4}$/.test(pin)) {
-    showMsg('O PIN veterinário deve ter exatamente 4 dígitos', 'error'); return;
+
+  let empresaNome = '', corMarca = '', whatsappComercial = '', logoUrl = '';
+  let pet_nome = '', especie = '', pin = '';
+
+  if (comerciante) {
+    empresaNome = document.getElementById('empresa_nome').value.trim();
+    corMarca = document.getElementById('cor_marca').value;
+    whatsappComercial = document.getElementById('whatsapp_comercial').value.trim();
+    logoUrl = document.getElementById('logo_url').value.trim();
+    if (!empresaNome) {
+      showMsg('Preencha o nome do negócio', 'error'); return;
+    }
+  } else {
+    pet_nome = document.getElementById('pet_nome').value.trim();
+    especie = document.getElementById('pet_especie').value;
+    pin = document.getElementById('pin_veterinario').value.trim();
+    if (!pet_nome || !especie || !pin) {
+      showMsg('Preencha todos os campos obrigatórios (*)', 'error'); return;
+    }
+    if (!/^\d{4}$/.test(pin)) {
+      showMsg('O PIN veterinário deve ter exatamente 4 dígitos', 'error'); return;
+    }
   }
 
   const btn = document.getElementById('btn-cadastrar');
@@ -152,11 +208,23 @@ async function cadastrar() {
         status: 'ativo',
         valor: 0,
         inicio: new Date().toISOString(),
-        vencimento: new Date(Date.now() + 365*24*60*60*1000).toISOString()
+        vencimento: new Date(Date.now() + 365*24*60*60*1000).toISOString(),
+        tipo_conta: comerciante ? 'comerciante' : 'tutor',
+        empresa_nome: comerciante ? empresaNome : null,
+        cor_marca: comerciante ? corMarca : null,
+        whatsapp_comercial: comerciante ? whatsappComercial : null,
+        logo_url: comerciante ? (logoUrl || null) : null
       })
       .select()
       .single();
     if (assError) throw assError;
+
+    if (comerciante) {
+      showMsg('✅ Conta do negócio criada! Acesse o painel pra começar a cadastrar os pets dos seus clientes.', 'success');
+      btn.textContent = '✅ Cadastrado!';
+      setTimeout(() => { window.location.href = 'painel.html'; }, 2000);
+      return;
+    }
 
     // 3. Cadastrar pet — o pet_id gerado É o código que vai no QR do pingente.
     // Baseado no id da própria linha de pets_saas (não da assinatura), pois uma
@@ -195,7 +263,7 @@ async function cadastrar() {
   } catch(err) {
     showMsg('Erro: ' + (err.message || 'Tente novamente'), 'error');
     btn.disabled = false;
-    btn.textContent = '🐾 Cadastrar meu pet';
+    btn.textContent = comerciante ? '🏪 Criar conta do meu negócio' : '🐾 Cadastrar meu pet';
   }
 }
 </script>
