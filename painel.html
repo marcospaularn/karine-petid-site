@@ -249,7 +249,7 @@ async function mostrarPainel() {
   document.getElementById('assinatura-area').innerHTML = `
     <div class="assinatura-card">
       <span class="badge ${ass.status === 'ativo' ? 'badge-ativo' : 'badge-vencido'}">${ass.status === 'ativo' ? '✅ Ativa' : '⚠️ Vencida'}</span>
-      <div class="venc-info">Plano: <span>${ass.plano || 'básico'}</span></div>
+      <div class="venc-info">Plano: <span>${ass.plano || 'básico'}${ass.valor ? ' — R$ ' + Number(ass.valor).toFixed(2).replace('.', ',') + '/mês' : ''}</span></div>
       <div class="venc-info">Vencimento: <span>${venc}</span> ${diasRestantes > 0 ? '(em ' + diasRestantes + ' dias)' : ''}</div>
       <a class="btn-renovar" href="https://wa.me/5515997996797?text=Quero renovar minha assinatura Karine Pet ID">Renovar assinatura</a>
       <a class="btn-wpp" href="https://wa.me/${(ass.whatsapp_comercial || '5515997996797').replace(/\D/g,'')}">📱 Falar com ${ass.tipo_conta === 'comerciante' ? (ass.empresa_nome || 'o suporte') : 'a Karine'}</a>
