@@ -62,6 +62,14 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#0a0a0a;color:#fff;min-h
 
 .btn-renovar{display:block;background:#c9a227;color:#0a0a0a;text-align:center;padding:12px;border-radius:10px;font-size:14px;font-weight:700;text-decoration:none;margin-top:14px}
 .btn-wpp{display:block;background:#25D366;color:#fff;text-align:center;padding:11px;border-radius:10px;font-size:13px;font-weight:600;text-decoration:none;margin-top:8px}
+
+.btn-novo-pet{display:block;width:100%;background:transparent;border:1px dashed #c9a22760;color:#c9a227;padding:12px;border-radius:12px;font-size:13px;font-weight:700;cursor:pointer;margin-bottom:16px}
+.novo-pet-form{background:#111;border:1px solid #c9a22740;border-radius:16px;padding:20px;margin-bottom:16px;display:none}
+.novo-pet-form .field{margin-bottom:12px}
+.novo-pet-form .field label{display:block;font-size:11px;color:#c9a22799;margin-bottom:5px;text-transform:uppercase}
+.novo-pet-form .field input,.novo-pet-form .field select,.novo-pet-form .field textarea{width:100%;background:#1a1400;border:1px solid #c9a22740;border-radius:8px;color:#f0d060;padding:9px 12px;font-size:13px;outline:none}
+.novo-pet-form .row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.scan-pet-name{font-size:10px;color:#c9a227;text-transform:uppercase;font-weight:700}
 </style>
 </head>
 <body>
@@ -94,7 +102,52 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#0a0a0a;color:#fff;min-h
   </div>
 
   <div class="container">
-    <div class="section-title">Meu pet</div>
+    <div class="section-title">Meus pets</div>
+    <button class="btn-novo-pet" onclick="alternarFormNovoPet()" id="btn-toggle-novo-pet">+ Cadastrar novo pet</button>
+
+    <div class="novo-pet-form" id="novo-pet-form">
+      <div class="field"><label>Nome do pet *</label><input type="text" id="np_nome" placeholder="Ex: Zeus"></div>
+      <div class="row">
+        <div class="field"><label>Espécie *</label>
+          <select id="np_especie">
+            <option value="">Selecione</option>
+            <option value="Cachorro">Cachorro</option>
+            <option value="Gato">Gato</option>
+            <option value="Outro">Outro</option>
+          </select>
+        </div>
+        <div class="field"><label>Raça</label><input type="text" id="np_raca" placeholder="Ex: Dobermann"></div>
+      </div>
+      <div class="row">
+        <div class="field"><label>Cor</label><input type="text" id="np_cor" placeholder="Ex: Marrom"></div>
+        <div class="field"><label>Porte</label>
+          <select id="np_porte">
+            <option value="">Selecione</option>
+            <option value="Pequeno">Pequeno</option>
+            <option value="Médio">Médio</option>
+            <option value="Grande">Grande</option>
+          </select>
+        </div>
+      </div>
+      <div class="row">
+        <div class="field"><label>Sexo</label>
+          <select id="np_sexo">
+            <option value="">Selecione</option>
+            <option value="Macho">Macho</option>
+            <option value="Fêmea">Fêmea</option>
+          </select>
+        </div>
+        <div class="field"><label>Idade</label><input type="text" id="np_idade" placeholder="Ex: 2 anos"></div>
+      </div>
+      <div class="field"><label>Observações</label><textarea id="np_obs" rows="2" placeholder="Ex: Castrado, usa coleira vermelha..."></textarea></div>
+      <div class="field"><label>PIN de acesso veterinário *</label><input type="text" id="np_pin" placeholder="4 dígitos, ex: 1234" maxlength="4" inputmode="numeric"></div>
+      <div class="field"><label>Vacinas</label><textarea id="np_vacinas" rows="2"></textarea></div>
+      <div class="field"><label>Alergias</label><textarea id="np_alergias" rows="2"></textarea></div>
+      <div class="field"><label>Medicamentos em uso</label><textarea id="np_medicamentos" rows="2"></textarea></div>
+      <button class="btn-login" onclick="cadastrarNovoPet()" id="btn-salvar-novo-pet">🐾 Salvar pet</button>
+      <div class="msg error" id="novo-pet-msg"></div>
+    </div>
+
     <div id="pet-area"><div class="empty">Carregando...</div></div>
 
     <div class="section-title">Minha assinatura</div>
@@ -130,6 +183,8 @@ async function sair() {
   document.getElementById('painel').style.display = 'none';
 }
 
+let assinaturaAtual = null;
+
 async function mostrarPainel() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return;
@@ -149,17 +204,66 @@ async function mostrarPainel() {
     document.getElementById('pet-area').innerHTML = '<div class="empty">Nenhum cadastro encontrado.</div>';
     return;
   }
+  assinaturaAtual = ass;
 
-  // Buscar pet
-  const { data: pet } = await supabase
+  // Buscar TODOS os pets ativos dessa conta (uma conta pode ter vários, ex: loja
+  // de pet cadastrando os pets de vários clientes dela)
+  const { data: pets } = await supabase
     .from('pets_saas')
     .select('*')
     .eq('assinatura_id', ass.id)
     .eq('ativo', true)
-    .single();
+    .order('created_at', { ascending: true });
 
-  // Renderizar pet — o pet_id É o código do QR (sem tabela qrcodes separada)
-  const petHtml = pet ? `
+  renderPets(pets || []);
+
+  // Renderizar assinatura
+  const venc = ass.vencimento ? new Date(ass.vencimento).toLocaleDateString('pt-BR') : '—';
+  const diasRestantes = ass.vencimento ? Math.ceil((new Date(ass.vencimento) - new Date()) / (1000*60*60*24)) : 0;
+  document.getElementById('assinatura-area').innerHTML = `
+    <div class="assinatura-card">
+      <span class="badge ${ass.status === 'ativo' ? 'badge-ativo' : 'badge-vencido'}">${ass.status === 'ativo' ? '✅ Ativa' : '⚠️ Vencida'}</span>
+      <div class="venc-info">Plano: <span>${ass.plano || 'básico'}</span></div>
+      <div class="venc-info">Vencimento: <span>${venc}</span> ${diasRestantes > 0 ? '(em ' + diasRestantes + ' dias)' : ''}</div>
+      <a class="btn-renovar" href="https://wa.me/5515997996797?text=Quero renovar minha assinatura Karine Pet ID">Renovar assinatura</a>
+      <a class="btn-wpp" href="https://wa.me/5515997996797">📱 Falar com a Karine</a>
+    </div>`;
+
+  // Buscar scans de todos os pets da conta
+  if (pets && pets.length > 0) {
+    const petIds = pets.map(p => p.pet_id);
+    const nomesPorId = Object.fromEntries(pets.map(p => [p.pet_id, p.nome]));
+    const { data: scans } = await supabase
+      .from('scan_historico')
+      .select('*')
+      .in('pet_id', petIds)
+      .order('horario', { ascending: false })
+      .limit(15);
+
+    if (scans && scans.length > 0) {
+      document.getElementById('scan-area').innerHTML = `<div class="scan-list">${scans.map(s => `
+        <div class="scan-item">
+          <div>
+            <div class="scan-pet-name">${nomesPorId[s.pet_id] || s.pet_id}</div>
+            <div class="scan-date">📍 ${new Date(s.horario).toLocaleString('pt-BR')}</div>
+            <div class="scan-coords">${s.latitude}, ${s.longitude}</div>
+          </div>
+          <a class="scan-map" href="https://maps.google.com/?q=${s.latitude},${s.longitude}" target="_blank">Ver no mapa →</a>
+        </div>`).join('')}</div>`;
+    } else {
+      document.getElementById('scan-area').innerHTML = '<div class="empty">🔍 Nenhum escaneamento ainda.</div>';
+    }
+  } else {
+    document.getElementById('scan-area').innerHTML = '<div class="empty">🔍 Nenhum escaneamento ainda.</div>';
+  }
+}
+
+function renderPets(pets) {
+  if (!pets.length) {
+    document.getElementById('pet-area').innerHTML = '<div class="empty">Nenhum pet cadastrado ainda. Use o botão acima pra adicionar o primeiro.</div>';
+    return;
+  }
+  document.getElementById('pet-area').innerHTML = pets.map(pet => `
     <div class="pet-card">
       <div class="pet-header">
         <div class="pet-avatar">🐾</div>
@@ -193,43 +297,78 @@ async function mostrarPainel() {
         ${pet.medicamentos ? `<div class="venc-info">Medicamentos: <span>${pet.medicamentos}</span></div>` : ''}
         ${pet.historico_medico ? `<div class="venc-info">Histórico: <span>${pet.historico_medico}</span></div>` : ''}
       </div>` : ''}
-    </div>` : '<div class="empty">Nenhum pet cadastrado.</div>';
+    </div>`).join('');
+}
 
-  document.getElementById('pet-area').innerHTML = petHtml;
+function alternarFormNovoPet() {
+  const form = document.getElementById('novo-pet-form');
+  form.style.display = form.style.display === 'block' ? 'none' : 'block';
+}
 
-  // Renderizar assinatura
-  const venc = ass.vencimento ? new Date(ass.vencimento).toLocaleDateString('pt-BR') : '—';
-  const diasRestantes = ass.vencimento ? Math.ceil((new Date(ass.vencimento) - new Date()) / (1000*60*60*24)) : 0;
-  document.getElementById('assinatura-area').innerHTML = `
-    <div class="assinatura-card">
-      <span class="badge ${ass.status === 'ativo' ? 'badge-ativo' : 'badge-vencido'}">${ass.status === 'ativo' ? '✅ Ativa' : '⚠️ Vencida'}</span>
-      <div class="venc-info">Plano: <span>${ass.plano || 'básico'}</span></div>
-      <div class="venc-info">Vencimento: <span>${venc}</span> ${diasRestantes > 0 ? '(em ' + diasRestantes + ' dias)' : ''}</div>
-      <a class="btn-renovar" href="https://wa.me/5515997996797?text=Quero renovar minha assinatura Karine Pet ID">Renovar assinatura</a>
-      <a class="btn-wpp" href="https://wa.me/5515997996797">📱 Falar com a Karine</a>
-    </div>`;
+async function cadastrarNovoPet() {
+  if (!assinaturaAtual) return;
+  const nome = document.getElementById('np_nome').value.trim();
+  const especie = document.getElementById('np_especie').value;
+  const pin = document.getElementById('np_pin').value.trim();
+  const msg = document.getElementById('novo-pet-msg');
 
-  // Buscar scans
-  if (pet) {
-    const { data: scans } = await supabase
-      .from('scan_historico')
-      .select('*')
-      .eq('pet_id', pet.pet_id)
-      .order('horario', { ascending: false })
-      .limit(10);
+  if (!nome || !especie || !pin) {
+    msg.textContent = 'Preencha nome, espécie e PIN (obrigatórios)';
+    msg.style.display = 'block';
+    return;
+  }
+  if (!/^\d{4}$/.test(pin)) {
+    msg.textContent = 'O PIN deve ter exatamente 4 dígitos';
+    msg.style.display = 'block';
+    return;
+  }
+  msg.style.display = 'none';
 
-    if (scans && scans.length > 0) {
-      document.getElementById('scan-area').innerHTML = `<div class="scan-list">${scans.map(s => `
-        <div class="scan-item">
-          <div>
-            <div class="scan-date">📍 ${new Date(s.horario).toLocaleString('pt-BR')}</div>
-            <div class="scan-coords">${s.latitude}, ${s.longitude}</div>
-          </div>
-          <a class="scan-map" href="https://maps.google.com/?q=${s.latitude},${s.longitude}" target="_blank">Ver no mapa →</a>
-        </div>`).join('')}</div>`;
-    } else {
-      document.getElementById('scan-area').innerHTML = '<div class="empty">🔍 Nenhum escaneamento ainda.</div>';
-    }
+  const btn = document.getElementById('btn-salvar-novo-pet');
+  btn.disabled = true;
+  btn.textContent = 'Salvando...';
+
+  try {
+    const { data: petData, error: petError } = await supabase
+      .from('pets_saas')
+      .insert({
+        pet_id: '',
+        nome,
+        especie,
+        raca: document.getElementById('np_raca').value.trim() || null,
+        cor: document.getElementById('np_cor').value.trim() || null,
+        porte: document.getElementById('np_porte').value || null,
+        sexo: document.getElementById('np_sexo').value || null,
+        idade: document.getElementById('np_idade').value.trim() || null,
+        obs: document.getElementById('np_obs').value.trim() || null,
+        vacinas: document.getElementById('np_vacinas').value.trim() || null,
+        alergias: document.getElementById('np_alergias').value.trim() || null,
+        medicamentos: document.getElementById('np_medicamentos').value.trim() || null,
+        pin_veterinario: pin,
+        assinatura_id: assinaturaAtual.id,
+        ativo: true
+      })
+      .select()
+      .single();
+    if (petError) throw petError;
+
+    const petId = 'PET-' + String(petData.id).padStart(4, '0');
+    await supabase.from('pets_saas').update({ pet_id: petId }).eq('id', petData.id);
+
+    // Limpa o formulário e recarrega a lista de pets
+    ['np_nome','np_raca','np_cor','np_idade','np_obs','np_pin','np_vacinas','np_alergias','np_medicamentos'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('np_especie').value = '';
+    document.getElementById('np_porte').value = '';
+    document.getElementById('np_sexo').value = '';
+    document.getElementById('novo-pet-form').style.display = 'none';
+
+    await mostrarPainel();
+  } catch (err) {
+    msg.textContent = 'Erro: ' + (err.message || 'Tente novamente');
+    msg.style.display = 'block';
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '🐾 Salvar pet';
   }
 }
 

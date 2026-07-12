@@ -158,12 +158,13 @@ async function cadastrar() {
       .single();
     if (assError) throw assError;
 
-    // 3. Cadastrar pet — o pet_id gerado É o código que vai no QR do pingente
-    const petId = 'PET-' + String(assData.id).padStart(4, '0');
-    const { error: petError } = await supabase
+    // 3. Cadastrar pet — o pet_id gerado É o código que vai no QR do pingente.
+    // Baseado no id da própria linha de pets_saas (não da assinatura), pois uma
+    // assinatura pode ter vários pets e o pet_id precisa ser único globalmente.
+    const { data: petData, error: petError } = await supabase
       .from('pets_saas')
       .insert({
-        pet_id: petId,
+        pet_id: '',
         nome: pet_nome,
         especie: especie,
         raca: document.getElementById('pet_raca').value.trim() || null,
@@ -178,8 +179,13 @@ async function cadastrar() {
         pin_veterinario: pin,
         assinatura_id: assData.id,
         ativo: true
-      });
+      })
+      .select()
+      .single();
     if (petError) throw petError;
+
+    const petId = 'PET-' + String(petData.id).padStart(4, '0');
+    await supabase.from('pets_saas').update({ pet_id: petId }).eq('id', petData.id);
 
     showMsg('✅ Cadastro realizado! O código do seu pet é ' + petId + '. Verifique seu email e acesse o painel.', 'success');
     btn.textContent = '✅ Cadastrado!';
