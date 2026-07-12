@@ -379,17 +379,7 @@ footer {
 </head>
 <body>
 
-<!-- ══════════════════════════════════════════════════
-     CONFIGURAÇÃO — edite a linha abaixo com seu anon key
-     ══════════════════════════════════════════════════ -->
-<script>
-  // ▼▼▼ COLE SEU ANON KEY AQUI ▼▼▼
-  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imlhb3NjcnN6amhieHRsa2hlcW5vIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg3ODMxMDYsImV4cCI6MjA5NDM1OTEwNn0.87-q7DKdYrzEWmYeZL6E_o_Sg-RMW1I3Zp2Cf2GPXo0';
-  // ▲▲▲ ─────────────────────── ▲▲▲
-
-  const SUPABASE_URL = 'https://iaoscrszjhbxtlkheqno.supabase.co';
-</script>
-<!-- ══════════════════════════════════════════════════ -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <header>
   <div class="logo">
@@ -399,16 +389,25 @@ footer {
       <div class="logo-sub">Painel Administrativo</div>
     </div>
   </div>
-  <div id="conn-status">⬤ Desconectado</div>
+  <div id="header-actions" style="display:flex;align-items:center;gap:14px">
+    <div id="conn-status">⬤ Desconectado</div>
+    <button id="btn-sair" class="btn-refresh" style="display:none" onclick="sair()">Sair</button>
+  </div>
 </header>
 
-<div id="config-banner">
-  <label>🔑 ANON KEY</label>
-  <input id="anon-key-input" type="password" placeholder="Cole aqui o anon key do Supabase (ou edite direto no arquivo)">
-  <button id="btn-connect" onclick="connectAndLoad()">Conectar</button>
+<div id="login-screen" style="max-width:360px;margin:60px auto;padding:0 20px">
+  <div class="kpi" style="padding:28px 24px">
+    <div class="kpi-label" style="margin-bottom:16px">Login administrativo</div>
+    <div style="display:flex;flex-direction:column;gap:12px">
+      <input id="admin-email" type="email" placeholder="Email" style="background:var(--card2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;padding:9px 14px;outline:none">
+      <input id="admin-senha" type="password" placeholder="Senha" style="background:var(--card2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;padding:9px 14px;outline:none">
+      <button id="btn-connect" onclick="fazerLogin()">Entrar</button>
+      <div id="login-msg" style="font-size:12px;color:var(--red);display:none"></div>
+    </div>
+  </div>
 </div>
 
-<main>
+<main id="main-area" style="display:none">
   <!-- KPIs -->
   <div class="kpi-row">
     <div class="kpi">
@@ -519,36 +518,44 @@ function showEmpty(msg = 'Nenhum registro encontrado.') {
     <tr class="state-row"><td colspan="8">${msg}</td></tr>`;
 }
 
-// ── Supabase fetch helper ──────────────────────────
-function getKey() {
-  return document.getElementById('anon-key-input').value.trim() || SUPABASE_ANON_KEY || '';
+// ── Supabase client + login ────────────────────────
+const SUPABASE_URL = 'https://iaoscrszjhbxtlkheqno.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imlhb3NjcnN6amhieHRsa2hlcW5vIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg3ODMxMDYsImV4cCI6MjA5NDM1OTEwNn0.87-q7DKdYrzEWmYeZL6E_o_Sg-RMW1I3Zp2Cf2GPXo0';
+const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+async function fazerLogin() {
+  const email = document.getElementById('admin-email').value.trim();
+  const senha = document.getElementById('admin-senha').value;
+  const msg = document.getElementById('login-msg');
+  msg.style.display = 'none';
+
+  const { error } = await supabaseClient.auth.signInWithPassword({ email, password: senha });
+  if (error) {
+    msg.textContent = 'Email ou senha incorretos';
+    msg.style.display = 'block';
+    return;
+  }
+  mostrarAdmin();
 }
 
-async function sbFetch(path, options = {}) {
-  const key = getKey();
-  if (!key) throw new Error('Anon key não configurado.');
-  const res = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
-    headers: {
-      'apikey': key,
-      'Authorization': `Bearer ${key}`,
-      'Content-Type': 'application/json',
-      'Prefer': options.prefer || 'return=representation',
-      ...options.headers
-    },
-    method:  options.method  || 'GET',
-    body:    options.body    || undefined
-  });
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err.message || `HTTP ${res.status}`);
-  }
-  return options.method === 'PATCH' || options.method === 'DELETE' ? res : res.json();
+async function sair() {
+  await supabaseClient.auth.signOut();
+  document.getElementById('login-screen').style.display = 'block';
+  document.getElementById('main-area').style.display = 'none';
+  document.getElementById('btn-sair').style.display = 'none';
+  document.getElementById('conn-status').textContent = '⬤ Desconectado';
+  document.getElementById('conn-status').className = '';
+}
+
+async function mostrarAdmin() {
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('main-area').style.display = 'block';
+  document.getElementById('btn-sair').style.display = 'inline-block';
+  await connectAndLoad();
 }
 
 // ── Conexão e carregamento ─────────────────────────
 async function connectAndLoad() {
-  const key = getKey();
-  if (!key) { toast('Cole o anon key no campo acima.', 'error'); return; }
   document.getElementById('conn-status').textContent = '⬤ Conectando...';
   document.getElementById('conn-status').className = '';
   try {
@@ -566,16 +573,15 @@ async function connectAndLoad() {
 async function loadData() {
   showLoading();
   try {
-    // Busca assinaturas com pets relacionados
-    const assinaturas = await sbFetch(
-      'assinaturas?select=id,tutor_nome,tutor_email,plano,status,valor,inicio,vencimento,telegram_chat_id,created_at,pets_saas(id,nome,especie,raca,pet_id,ativo)&order=created_at.desc'
-    );
+    const { data, error } = await supabaseClient
+      .from('assinaturas')
+      .select('id,tutor_nome,tutor_email,plano,status,valor,inicio,vencimento,telegram_chat_id,created_at,pets_saas(id,nome,especie,raca,pet_id,ativo)')
+      .order('created_at', { ascending: false });
+    if (error) throw error;
 
-    allData = assinaturas;
-    updateKPIs(assinaturas);
+    allData = data;
+    updateKPIs(data);
     renderTable();
-    document.getElementById('conn-status').textContent = '⬤ Conectado';
-    document.getElementById('conn-status').className = 'ok';
   } catch (e) {
     showEmpty('Erro ao carregar: ' + e.message);
     toast(e.message, 'error');
@@ -713,11 +719,8 @@ async function confirmAction() {
   const newStatus = action === 'ativar' ? 'ativo' : 'bloqueado';
 
   try {
-    await sbFetch(`assinaturas?id=eq.${id}`, {
-      method: 'PATCH',
-      prefer: 'return=minimal',
-      body: JSON.stringify({ status: newStatus })
-    });
+    const { error } = await supabaseClient.from('assinaturas').update({ status: newStatus }).eq('id', id);
+    if (error) throw error;
 
     // Atualiza local
     const idx = allData.findIndex(a => a.id === id);
@@ -732,12 +735,10 @@ async function confirmAction() {
   closeModal();
 }
 
-// ── Auto-connect se key hardcoded ─────────────────
-window.addEventListener('DOMContentLoaded', () => {
-  if (SUPABASE_ANON_KEY) {
-    document.getElementById('anon-key-input').placeholder = '(Chave configurada no arquivo)';
-    connectAndLoad();
-  }
+// ── Retoma sessão já logada (refresh de página) ────
+window.addEventListener('DOMContentLoaded', async () => {
+  const { data: { session } } = await supabaseClient.auth.getSession();
+  if (session) mostrarAdmin();
 });
 
 // ── Fechar modal clicando fora ────────────────────
