@@ -103,7 +103,7 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#0a0a0a;color:#fff;min-h
   </div>
 
   <div class="container">
-    <div class="section-title">Meus pets</div>
+    <div class="section-title" id="section-title-pets">Meus pets</div>
     <button class="btn-novo-pet" onclick="alternarFormNovoPet()" id="btn-toggle-novo-pet">+ Cadastrar novo pet</button>
 
     <div class="novo-pet-form" id="novo-pet-form">
@@ -141,6 +141,16 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#0a0a0a;color:#fff;min-h
         <div class="field"><label>Idade</label><input type="text" id="np_idade" placeholder="Ex: 2 anos"></div>
       </div>
       <div class="field"><label>Observações</label><textarea id="np_obs" rows="2" placeholder="Ex: Castrado, usa coleira vermelha..."></textarea></div>
+      <div id="np-bloco-pagamento" style="display:none">
+        <div class="row">
+          <div class="field"><label>Nome do cliente (tutor do pet)</label><input type="text" id="np_cliente_nome" placeholder="Ex: Maria Silva"></div>
+          <div class="field"><label>Telefone do cliente</label><input type="text" id="np_cliente_telefone" placeholder="15999999999"></div>
+        </div>
+        <div class="row">
+          <div class="field"><label>Valor cobrado (R$)</label><input type="text" id="np_valor_cobrado" placeholder="Ex: 19.90" inputmode="decimal"></div>
+          <div class="field"><label>Vencimento</label><input type="date" id="np_vencimento_pagamento"></div>
+        </div>
+      </div>
       <div class="field"><label>PIN de acesso veterinário *</label><input type="text" id="np_pin" placeholder="4 dígitos, ex: 1234" maxlength="4" inputmode="numeric"></div>
       <div class="field"><label>Vacinas</label><textarea id="np_vacinas" rows="2"></textarea></div>
       <div class="field"><label>Alergias</label><textarea id="np_alergias" rows="2"></textarea></div>
@@ -208,6 +218,8 @@ function aplicarBranding(ass) {
     raiz.removeProperty('--accent-rgb');
     document.getElementById('topbar-logo').textContent = 'KP — Karine Pet ID';
   }
+  document.getElementById('np-bloco-pagamento').style.display = ass.tipo_conta === 'comerciante' ? 'block' : 'none';
+  document.getElementById('section-title-pets').textContent = ass.tipo_conta === 'comerciante' ? 'Pets dos meus clientes' : 'Meus pets';
 }
 
 async function mostrarPainel() {
@@ -315,6 +327,15 @@ function renderPets(pets) {
         <div class="info-label">PIN veterinário (informe pra quem for ver a ficha médica completa)</div>
         <div class="qr-code-display">${pet.pin_veterinario || '—'}</div>
       </div>
+      ${assinaturaAtual.tipo_conta === 'comerciante' ? `
+      <div class="qr-section" style="text-align:left">
+        <div class="info-label" style="margin-bottom:8px">Cliente e pagamento</div>
+        ${pet.cliente_nome ? `<div class="venc-info">Cliente: <span>${pet.cliente_nome}${pet.cliente_telefone ? ' — ' + pet.cliente_telefone : ''}</span></div>` : ''}
+        ${pet.valor_cobrado ? `<div class="venc-info">Valor cobrado: <span>R$ ${Number(pet.valor_cobrado).toFixed(2).replace('.', ',')}</span></div>` : ''}
+        ${pet.vencimento_pagamento ? `<div class="venc-info">Vencimento: <span>${new Date(pet.vencimento_pagamento + 'T00:00:00').toLocaleDateString('pt-BR')}</span></div>` : ''}
+        <span class="badge ${pet.status_pagamento === 'pago' ? 'badge-ativo' : 'badge-vencido'}">${pet.status_pagamento === 'pago' ? '✅ Pago' : '⏳ Pendente'}</span>
+        <button class="btn-login" style="margin-top:8px" onclick="marcarPagamento(${pet.id}, '${pet.status_pagamento === 'pago' ? 'pendente' : 'pago'}')">${pet.status_pagamento === 'pago' ? 'Marcar como pendente' : 'Marcar como pago'}</button>
+      </div>` : ''}
       ${(pet.vacinas || pet.alergias || pet.medicamentos || pet.historico_medico) ? `
       <div class="qr-section" style="text-align:left">
         <div class="info-label" style="margin-bottom:8px">Ficha médica</div>
@@ -324,6 +345,11 @@ function renderPets(pets) {
         ${pet.historico_medico ? `<div class="venc-info">Histórico: <span>${pet.historico_medico}</span></div>` : ''}
       </div>` : ''}
     </div>`).join('');
+}
+
+async function marcarPagamento(petDbId, novoStatus) {
+  await supabaseClient.from('pets_saas').update({ status_pagamento: novoStatus }).eq('id', petDbId);
+  await mostrarPainel();
 }
 
 function alternarFormNovoPet() {
@@ -372,7 +398,12 @@ async function cadastrarNovoPet() {
         medicamentos: document.getElementById('np_medicamentos').value.trim() || null,
         pin_veterinario: pin,
         assinatura_id: assinaturaAtual.id,
-        ativo: true
+        ativo: true,
+        cliente_nome: document.getElementById('np_cliente_nome').value.trim() || null,
+        cliente_telefone: document.getElementById('np_cliente_telefone').value.trim() || null,
+        valor_cobrado: parseFloat(document.getElementById('np_valor_cobrado').value) || null,
+        vencimento_pagamento: document.getElementById('np_vencimento_pagamento').value || null,
+        status_pagamento: 'pendente'
       })
       .select()
       .single();
@@ -382,7 +413,7 @@ async function cadastrarNovoPet() {
     await supabaseClient.from('pets_saas').update({ pet_id: petId }).eq('id', petData.id);
 
     // Limpa o formulário e recarrega a lista de pets
-    ['np_nome','np_raca','np_cor','np_idade','np_obs','np_pin','np_vacinas','np_alergias','np_medicamentos'].forEach(id => document.getElementById(id).value = '');
+    ['np_nome','np_raca','np_cor','np_idade','np_obs','np_pin','np_vacinas','np_alergias','np_medicamentos','np_cliente_nome','np_cliente_telefone','np_valor_cobrado','np_vencimento_pagamento'].forEach(id => document.getElementById(id).value = '');
     document.getElementById('np_especie').value = '';
     document.getElementById('np_porte').value = '';
     document.getElementById('np_sexo').value = '';
