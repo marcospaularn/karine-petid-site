@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Karine Pet ID — Painel do Tutor</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
 <style>
 :root{--accent:#c9a227;--accent-light:#f0d060;--accent-rgb:201,162,39}
 *{box-sizing:border-box;margin:0;padding:0}
@@ -322,6 +323,7 @@ function renderPets(pets) {
         <div class="info-label">Código do pingente (QR Code)</div>
         <div class="qr-code-display">${pet.pet_id}</div>
         <div class="qr-url">https://n8n-n8n.q9hssd.easypanel.host/webhook/karine-petid/scan?id=${pet.pet_id}</div>
+        <button class="btn-login" style="margin-top:10px" onclick="baixarQR('${pet.pet_id}')">📷 Baixar QR Code</button>
       </div>
       <div class="qr-section">
         <div class="info-label">PIN veterinário (informe pra quem for ver a ficha médica completa)</div>
@@ -345,6 +347,17 @@ function renderPets(pets) {
         ${pet.historico_medico ? `<div class="venc-info">Histórico: <span>${pet.historico_medico}</span></div>` : ''}
       </div>` : ''}
     </div>`).join('');
+}
+
+function baixarQR(petId) {
+  const url = `https://n8n-n8n.q9hssd.easypanel.host/webhook/karine-petid/scan?id=${petId}`;
+  const qr = qrcode(0, 'M');
+  qr.addData(url);
+  qr.make();
+  const a = document.createElement('a');
+  a.href = qr.createDataURL(10, 8);
+  a.download = `qrcode-${petId}.gif`;
+  a.click();
 }
 
 async function marcarPagamento(petDbId, novoStatus) {

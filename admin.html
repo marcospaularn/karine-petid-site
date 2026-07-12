@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Karine Pet ID — Admin</title>
+<script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
 <style>
 /* ── CONFIGURAÇÃO: cole o anon key na constante abaixo ── */
@@ -631,6 +632,7 @@ function renderTable() {
           <div class="pet-chip">
             ${p.nome || '?'}
             <span class="pet-id">${p.pet_id || ''}</span>
+            ${p.pet_id ? `<span style="cursor:pointer" title="Baixar QR Code" onclick="baixarQR('${p.pet_id}')">📷</span>` : ''}
           </div>`).join('')}</div>`
       : '<span style="color:var(--muted);font-size:11px">Nenhum</span>';
 
@@ -668,6 +670,18 @@ function badgeHTML(status) {
   };
   const s = map[status] || { cls: 'pendente', icon: '⬤', label: status || 'Desconhecido' };
   return `<span class="badge ${s.cls}">${s.icon} ${s.label}</span>`;
+}
+
+// ── QR Code ────────────────────────────────────────
+function baixarQR(petId) {
+  const url = `https://n8n-n8n.q9hssd.easypanel.host/webhook/karine-petid/scan?id=${petId}`;
+  const qr = qrcode(0, 'M');
+  qr.addData(url);
+  qr.make();
+  const a = document.createElement('a');
+  a.href = qr.createDataURL(10, 8);
+  a.download = `qrcode-${petId}.gif`;
+  a.click();
 }
 
 // ── Modal ──────────────────────────────────────────
