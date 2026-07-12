@@ -161,14 +161,14 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#0a0a0a;color:#fff;min-h
 <script>
 const SUPABASE_URL = 'https://iaoscrszjhbxtlkheqno.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imlhb3NjcnN6amhieHRsa2hlcW5vIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg3ODMxMDYsImV4cCI6MjA5NDM1OTEwNn0.87-q7DKdYrzEWmYeZL6E_o_Sg-RMW1I3Zp2Cf2GPXo0';
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 async function fazerLogin() {
   const email = document.getElementById('login-email').value.trim();
   const senha = document.getElementById('login-senha').value;
   const msg = document.getElementById('login-msg');
 
-  const { error } = await supabase.auth.signInWithPassword({ email, password: senha });
+  const { error } = await supabaseClient.auth.signInWithPassword({ email, password: senha });
   if (error) {
     msg.textContent = 'Email ou senha incorretos';
     msg.style.display = 'block';
@@ -178,7 +178,7 @@ async function fazerLogin() {
 }
 
 async function sair() {
-  await supabase.auth.signOut();
+  await supabaseClient.auth.signOut();
   document.getElementById('login-area').style.display = 'block';
   document.getElementById('painel').style.display = 'none';
 }
@@ -186,7 +186,7 @@ async function sair() {
 let assinaturaAtual = null;
 
 async function mostrarPainel() {
-  const { data: { user } } = await supabase.auth.getUser();
+  const { data: { user } } = await supabaseClient.auth.getUser();
   if (!user) return;
 
   document.getElementById('login-area').style.display = 'none';
@@ -194,7 +194,7 @@ async function mostrarPainel() {
   document.getElementById('topbar-name').textContent = user.email;
 
   // Buscar assinatura
-  const { data: ass } = await supabase
+  const { data: ass } = await supabaseClient
     .from('assinaturas')
     .select('*')
     .eq('tutor_email', user.email)
@@ -208,7 +208,7 @@ async function mostrarPainel() {
 
   // Buscar TODOS os pets ativos dessa conta (uma conta pode ter vários, ex: loja
   // de pet cadastrando os pets de vários clientes dela)
-  const { data: pets } = await supabase
+  const { data: pets } = await supabaseClient
     .from('pets_saas')
     .select('*')
     .eq('assinatura_id', ass.id)
@@ -233,7 +233,7 @@ async function mostrarPainel() {
   if (pets && pets.length > 0) {
     const petIds = pets.map(p => p.pet_id);
     const nomesPorId = Object.fromEntries(pets.map(p => [p.pet_id, p.nome]));
-    const { data: scans } = await supabase
+    const { data: scans } = await supabaseClient
       .from('scan_historico')
       .select('*')
       .in('pet_id', petIds)
@@ -329,7 +329,7 @@ async function cadastrarNovoPet() {
   btn.textContent = 'Salvando...';
 
   try {
-    const { data: petData, error: petError } = await supabase
+    const { data: petData, error: petError } = await supabaseClient
       .from('pets_saas')
       .insert({
         pet_id: '',
@@ -353,7 +353,7 @@ async function cadastrarNovoPet() {
     if (petError) throw petError;
 
     const petId = 'PET-' + String(petData.id).padStart(4, '0');
-    await supabase.from('pets_saas').update({ pet_id: petId }).eq('id', petData.id);
+    await supabaseClient.from('pets_saas').update({ pet_id: petId }).eq('id', petData.id);
 
     // Limpa o formulário e recarrega a lista de pets
     ['np_nome','np_raca','np_cor','np_idade','np_obs','np_pin','np_vacinas','np_alergias','np_medicamentos'].forEach(id => document.getElementById(id).value = '');
@@ -373,7 +373,7 @@ async function cadastrarNovoPet() {
 }
 
 // Verificar sessão ao carregar
-supabase.auth.getSession().then(({ data: { session } }) => {
+supabaseClient.auth.getSession().then(({ data: { session } }) => {
   if (session) mostrarPainel();
 });
 </script>
