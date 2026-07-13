@@ -208,7 +208,7 @@ async function cadastrar() {
         status: 'ativo',
         valor: comerciante ? 49.00 : 19.90,
         inicio: new Date().toISOString(),
-        vencimento: new Date(Date.now() + 365*24*60*60*1000).toISOString(),
+        vencimento: new Date(Date.now() + 30*24*60*60*1000).toISOString(),
         tipo_conta: comerciante ? 'comerciante' : 'tutor',
         empresa_nome: comerciante ? empresaNome : null,
         cor_marca: comerciante ? corMarca : null,

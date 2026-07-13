@@ -589,10 +589,16 @@ async function loadData() {
   }
 }
 
+// ── Status efetivo (considera vencimento mesmo se o banco ainda diz "ativo") ──
+function statusEfetivo(a) {
+  if (a.status === 'ativo' && a.vencimento && new Date(a.vencimento) < new Date()) return 'vencido';
+  return a.status;
+}
+
 // ── KPIs ──────────────────────────────────────────
 function updateKPIs(data) {
-  const ativos    = data.filter(a => a.status === 'ativo');
-  const inativos  = data.filter(a => a.status !== 'ativo');
+  const ativos    = data.filter(a => statusEfetivo(a) === 'ativo');
+  const inativos  = data.filter(a => statusEfetivo(a) !== 'ativo');
   const totalPets = data.reduce((acc, a) => acc + (a.pets_saas?.length || 0), 0);
 
   const receita      = data.reduce((acc, a) => acc + (parseFloat(a.valor) || 0), 0);
@@ -618,7 +624,7 @@ function renderTable() {
   const search = document.getElementById('search-input').value.toLowerCase();
 
   let rows = allData.filter(a => {
-    if (currentFilter !== 'todos' && a.status !== currentFilter) return false;
+    if (currentFilter !== 'todos' && statusEfetivo(a) !== currentFilter) return false;
     if (search && !a.tutor_nome?.toLowerCase().includes(search) && !a.tutor_email?.toLowerCase().includes(search)) return false;
     return true;
   });
@@ -628,10 +634,11 @@ function renderTable() {
   const tbody = document.getElementById('table-body');
   tbody.innerHTML = rows.map(a => {
     const pets      = a.pets_saas || [];
-    const statusBadge = badgeHTML(a.status);
+    const efetivo   = statusEfetivo(a);
+    const statusBadge = badgeHTML(efetivo);
     const venc      = a.vencimento ? new Date(a.vencimento) : null;
     const vencStr   = venc ? venc.toLocaleDateString('pt-BR') : '—';
-    const vencColor = venc && venc < new Date() && a.status === 'ativo' ? 'style="color:var(--orange)"' : '';
+    const vencColor = efetivo === 'vencido' ? 'style="color:var(--orange)"' : '';
     const valor     = a.valor ? `R$ ${parseFloat(a.valor).toFixed(2).replace('.', ',')}` : '—';
     const petsHTML  = pets.length
       ? `<div class="pet-chips">${pets.map(p => `
@@ -642,8 +649,8 @@ function renderTable() {
           </div>`).join('')}</div>`
       : '<span style="color:var(--muted);font-size:11px">Nenhum</span>';
 
-    const canAtiv  = a.status !== 'ativo';
-    const canBlock = a.status !== 'bloqueado';
+    const canAtiv  = efetivo !== 'ativo';
+    const canBlock = efetivo !== 'bloqueado';
 
     return `
       <tr>
@@ -698,7 +705,7 @@ function openModal(id, action) {
 
   document.getElementById('modal-title').textContent = action === 'ativar' ? 'Ativar assinatura' : 'Bloquear assinatura';
   document.getElementById('modal-body').innerHTML = action === 'ativar'
-    ? `Deseja <strong>ativar</strong> a assinatura de <strong>${nome}</strong>?<br><br>O status será atualizado para <strong style="color:var(--green)">Ativo</strong>.`
+    ? `Deseja <strong>ativar</strong> a assinatura de <strong>${nome}</strong>?<br><br>O status será atualizado para <strong style="color:var(--green)">Ativo</strong> e o vencimento renovado por <strong>+30 dias</strong> a partir de hoje.`
     : `Deseja <strong>bloquear</strong> a assinatura de <strong>${nome}</strong>?<br><br>O status será atualizado para <strong style="color:var(--red)">Bloqueado</strong>. O tutor não poderá usar o sistema.`;
 
   const btn = document.getElementById('modal-confirm');
@@ -717,18 +724,22 @@ async function confirmAction() {
   if (!pendingAction) return;
   const { id, action } = pendingAction;
   const newStatus = action === 'ativar' ? 'ativo' : 'bloqueado';
+  const updatePayload = { status: newStatus };
+  if (action === 'ativar') {
+    updatePayload.vencimento = new Date(Date.now() + 30*24*60*60*1000).toISOString();
+  }
 
   try {
-    const { error } = await supabaseClient.from('assinaturas').update({ status: newStatus }).eq('id', id);
+    const { error } = await supabaseClient.from('assinaturas').update(updatePayload).eq('id', id);
     if (error) throw error;
 
     // Atualiza local
     const idx = allData.findIndex(a => a.id === id);
-    if (idx >= 0) allData[idx].status = newStatus;
+    if (idx >= 0) Object.assign(allData[idx], updatePayload);
 
     updateKPIs(allData);
     renderTable();
-    toast(action === 'ativar' ? '✓ Assinatura ativada com sucesso.' : '✗ Assinatura bloqueada.', action === 'ativar' ? 'success' : 'error');
+    toast(action === 'ativar' ? '✓ Assinatura ativada e renovada por +30 dias.' : '✗ Assinatura bloqueada.', action === 'ativar' ? 'success' : 'error');
   } catch (e) {
     toast('Erro: ' + e.message, 'error');
   }
