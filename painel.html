@@ -197,6 +197,14 @@ async function sair() {
 
 let assinaturaAtual = null;
 
+function dataUTC(str) {
+  // scan_historico.horario pode vir sem indicador de fuso (naive timestamp),
+  // mas o valor gravado é sempre UTC — sem isso o navegador interpreta como
+  // hora local e o horário exibido fica errado (deslocado pelo fuso do usuário).
+  const temFuso = /[Zz]|[+-]\d{2}:?\d{2}$/.test(str);
+  return new Date(temFuso ? str : str + 'Z');
+}
+
 function hexParaRgb(hex) {
   const m = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex || '');
   if (!m) return null;
@@ -304,7 +312,7 @@ async function mostrarPainel() {
         <div class="scan-item">
           <div>
             <div class="scan-pet-name">${nomesPorId[s.pet_id] || s.pet_id}</div>
-            <div class="scan-date">📍 ${new Date(s.horario).toLocaleString('pt-BR')}</div>
+            <div class="scan-date">📍 ${dataUTC(s.horario).toLocaleString('pt-BR')}</div>
             <div class="scan-coords">${s.latitude}, ${s.longitude}</div>
           </div>
           <a class="scan-map" href="https://maps.google.com/?q=${s.latitude},${s.longitude}" target="_blank">Ver no mapa →</a>
