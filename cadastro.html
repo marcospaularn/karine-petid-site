@@ -261,7 +261,12 @@ async function cadastrar() {
     setTimeout(() => { window.location.href = 'painel.html'; }, 2000);
 
   } catch(err) {
-    showMsg('Erro: ' + (err.message || 'Tente novamente'), 'error');
+    const msg = err.message || '';
+    if (msg.includes('already registered') || msg.includes('already exists')) {
+      showMsg('Esse email já tem uma conta. Se você já é cadastrado, faça login no painel e adicione o pet por lá (não precisa cadastrar de novo). Acesse: painel.html', 'error');
+    } else {
+      showMsg('Erro: ' + (msg || 'Tente novamente'), 'error');
+    }
     btn.disabled = false;
     btn.textContent = comerciante ? '🏪 Criar conta do meu negócio' : '🐾 Cadastrar meu pet';
   }
