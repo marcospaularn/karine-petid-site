@@ -196,6 +196,13 @@ async function cadastrar() {
       options: { data: { tutor_nome: nome } }
     });
     if (authError) throw authError;
+    // Em algumas configurações do Supabase (proteção contra enumeração de email),
+    // signUp() não retorna erro pra email já existente — só devolve um user "fake"
+    // sem identities novas. Sem essa checagem o código seguiria e criaria uma
+    // assinatura duplicada silenciosamente.
+    if (authData.user && Array.isArray(authData.user.identities) && authData.user.identities.length === 0) {
+      throw new Error('Esse email já está registrado (already registered)');
+    }
 
     // 2. Criar assinatura
     const { data: assData, error: assError } = await supabaseClient
